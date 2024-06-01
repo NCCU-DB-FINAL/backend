@@ -1,19 +1,24 @@
+import random
 import unittest
 import requests
 
+
 class TestRentalAPI(unittest.TestCase):
+    rand = str(random.randint(0, 10000))
+
     def setUp(self):
         self.base_url = 'http://127.0.0.1:5000'
 
     def test0_signup(self):
         url = f'{self.base_url}/api/signup'
-        data = {'username': 'test_landlord', 'phonenum':'0912345678', 'password': '123456', 'type': 'landlord'}
+        data = {'username': 'test_landlord' + self.rand, 'phonenum': '0912345678', 'password': '123456',
+                'type': 'landlord'}
         response = requests.post(url, json=data)
         self.assertEqual(response.status_code, 201)
 
     def test1_login(self):
         url = f'{self.base_url}/api/login'
-        data = {'username': 'test_landlord', 'password': '123456', 'type': 'landlord'}
+        data = {'username': 'test_landlord' + self.rand, 'password': '123456', 'type': 'landlord'}
         response = requests.post(url, json=data)
         self.assertEqual(response.status_code, 200)
 
@@ -50,6 +55,7 @@ class TestRentalAPI(unittest.TestCase):
     #     data = {'tenant_id': 1, 'rating': 5, 'comment': 'Great place!'}
     #     response = requests.post(url, json=data)
     #     self.assertEqual(response.status_code, 201)
+
 
 if __name__ == '__main__':
     unittest.main()
