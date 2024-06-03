@@ -1,11 +1,12 @@
-
 from flask import Flask, request, jsonify
 import mysql.connector
 from mysql.connector import Error
 from datetime import datetime
 import hashlib
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 
 def create_connection():
