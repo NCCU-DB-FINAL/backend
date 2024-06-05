@@ -44,17 +44,36 @@ def signup():
     connection = create_connection()
     cursor = connection.cursor()
 
+    # 檢查用戶名稱是否存在
     if user_type == 'landlord':
-        cursor.execute("INSERT INTO LandLord (L_Name, L_PhoneNum, Password) VALUES (%s, %s, %s)",
-                       (username, phonenum, hashed_password))
+        cursor.execute("SELECT * FROM LandLord WHERE L_Name = %s", (username,))
     elif user_type == 'tenant':
-        cursor.execute("INSERT INTO Tenant (T_Name, T_PhoneNum, Password) VALUES (%s, %s, %s)",
-                       (username, phonenum, hashed_password))
+        cursor.execute("SELECT * FROM Tenant WHERE T_Name = %s", (username,))
 
-    connection.commit()
+    existing_user = cursor.fetchone()
+
+    if existing_user:
+        cursor.close()
+        connection.close()
+        return jsonify({'message': 'Username already exists'}), 409
+
+    # 插入新用戶
+    try:
+        if user_type == 'landlord':
+            cursor.execute("INSERT INTO LandLord (L_Name, L_PhoneNum, Password) VALUES (%s, %s, %s)",
+                           (username, phonenum, hashed_password))
+        elif user_type == 'tenant':
+            cursor.execute("INSERT INTO Tenant (T_Name, T_PhoneNum, Password) VALUES (%s, %s, %s)",
+                           (username, phonenum, hashed_password))
+        connection.commit()
+    except Error as e:
+        connection.rollback()
+        cursor.close()
+        connection.close()
+        return jsonify({'message': f'Error: {e}'}), 500
+
     cursor.close()
     connection.close()
-
     return jsonify({'message': 'User registered successfully!'}), 201
 
 
@@ -83,33 +102,6 @@ def login():
         return jsonify({'user_id': user_data[0]}), 200
     else:
         return jsonify({'message': 'Invalid username or password'}), 401
-
-
-@app.route('/api/rental', methods=['POST'])
-def add_rental():
-    """房東新增租屋資訊"""
-    data = request.get_json()
-    address = data.get('address')
-    price = data.get('price')
-    type = data.get('type')
-    bedroom = data.get('bedroom')
-    living_room = data.get('living_room')
-    bathroom = data.get('bathroom')
-    ping = data.get('ping')
-    rental_term = data.get('rental_term')
-    post_date = datetime.now().strftime('%Y-%m-%d')
-    landLord_id = data.get('landLord_id')
-
-    connection = create_connection()
-    cursor = connection.cursor()
-    cursor.execute(
-        "INSERT INTO Rental (Address, Price, Type, Bedroom, LivingRoom, Bathroom, Ping, RentalTerm, PostDate, L_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-        (address, price, type, bedroom, living_room, bathroom, ping, rental_term, post_date, landLord_id))
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-    return jsonify({'message': 'Rental added successfully!'}), 201
 
 
 @app.route('/api/rental/<int:id>', methods=['PUT'])
@@ -148,6 +140,33 @@ def delete_rental(id):
     connection.close()
 
     return jsonify({'message': 'Rental deleted successfully!'}), 200
+
+
+@app.route('/api/rental', methods=['POST'])
+def add_rental():
+    """房東新增租屋資訊"""
+    data = request.get_json()
+    address = data.get('address')
+    price = data.get('price')
+    type = data.get('type')
+    bedroom = data.get('bedroom')
+    living_room = data.get('living_room')
+    bathroom = data.get('bathroom')
+    ping = data.get('ping')
+    rental_term = data.get('rental_term')
+    post_date = datetime.now().strftime('%Y-%m-%d')
+    landLord_id = data.get('landLord_id')
+
+    connection = create_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        "INSERT INTO Rental (Address, Price, Type, Bedroom, LivingRoom, Bathroom, Ping, RentalTerm, PostDate, L_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+        (address, price, type, bedroom, living_room, bathroom, ping, rental_term, post_date, landLord_id))
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({'message': 'Rental added successfully!'}), 201
 
 
 @app.route('/api/rental', methods=['GET'])

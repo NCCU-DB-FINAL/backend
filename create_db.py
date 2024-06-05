@@ -38,7 +38,7 @@ def create_tables(connection):
             L_id INT AUTO_INCREMENT PRIMARY KEY,
             L_Name VARCHAR(100) NOT NULL,
             L_PhoneNum VARCHAR(15) NOT NULL,
-            Password VARCHAR(100) NOT NULL
+            Password VARCHAR(300) NOT NULL
         )
     """)
 
@@ -48,7 +48,7 @@ def create_tables(connection):
             T_id INT AUTO_INCREMENT PRIMARY KEY,
             T_Name VARCHAR(100) NOT NULL,
             T_PhoneNum VARCHAR(15) NOT NULL,
-            Password VARCHAR(100) NOT NULL
+            Password VARCHAR(300) NOT NULL
         )
     """)
 
