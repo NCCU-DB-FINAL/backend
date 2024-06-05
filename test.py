@@ -16,9 +16,22 @@ class TestRentalAPI(unittest.TestCase):
         response = requests.post(url, json=data)
         self.assertEqual(response.status_code, 201)
 
+    def test00_signup(self):
+        url = f'{self.base_url}/api/signup'
+        data = {'username': 'test_landlord' + self.rand + 't', 'phonenum': '0912345678', 'password': '123456',
+                'type': 'tenant'}
+        response = requests.post(url, json=data)
+        self.assertEqual(response.status_code, 201)
+
     def test1_login(self):
         url = f'{self.base_url}/api/login'
         data = {'username': 'test_landlord' + self.rand, 'password': '123456', 'type': 'landlord'}
+        response = requests.post(url, json=data)
+        self.assertEqual(response.status_code, 200)
+
+    def test11_login(self):
+        url = f'{self.base_url}/api/login'
+        data = {'username': 'test_landlord' + self.rand + 't', 'password': '123456', 'type': 'tenant'}
         response = requests.post(url, json=data)
         self.assertEqual(response.status_code, 200)
 

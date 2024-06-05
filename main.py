@@ -48,7 +48,7 @@ def signup():
         cursor.execute("INSERT INTO LandLord (L_Name, L_PhoneNum, Password) VALUES (%s, %s, %s)",
                        (username, phonenum, hashed_password))
     elif user_type == 'tenant':
-        cursor.execute("INSERT INTO Tenant (T_Name, L_PhoneNum, Password) VALUES (%s, %s, %s)",
+        cursor.execute("INSERT INTO Tenant (T_Name, T_PhoneNum, Password) VALUES (%s, %s, %s)",
                        (username, phonenum, hashed_password))
 
     connection.commit()
@@ -149,22 +149,24 @@ def delete_rental(id):
 
     return jsonify({'message': 'Rental deleted successfully!'}), 200
 
+
 @app.route('/api/rental', methods=['GET'])
 def get_user_rentals():
     """房東查看自己貼的所有租屋資訊"""
     user_id = request.args.get('user')
-    
+
     connection = create_connection()
     cursor = connection.cursor(dictionary=True)
-    
+
     cursor.execute("SELECT * FROM Rental WHERE L_id = %s", (user_id,))
     rentals = cursor.fetchall()
-    
+
     cursor.close()
     connection.close()
 
     return jsonify({'rentals': rentals}), 200
-    
+
+
 @app.route('/api/rental/search', methods=['GET'])
 def search_rental():
     """房客搜尋租屋資訊"""
@@ -201,6 +203,7 @@ def search_rental():
 
     return jsonify({'rentals': search_results}), 200
 
+
 @app.route('/api/rental/<int:id>', methods=['GET'])
 def get_rental(id):
     """房客瀏覽單獨物件資訊"""
@@ -211,11 +214,12 @@ def get_rental(id):
     rental = cursor.fetchone()
     cursor.close()
     connection.close()
-    
+
     if not rental:
         return jsonify({'message': 'Rental not found!'}), 404
     return jsonify({'rental': rental}), 200
-    
+
+
 @app.route('/api/like/<int:id>', methods=['POST'])
 def like_rental(id):
     """房客收藏喜歡的房子"""
@@ -233,6 +237,7 @@ def like_rental(id):
 
     return jsonify({'message': 'Rental liked successfully!'}), 201
 
+
 @app.route('/api/like/<int:id>', methods=['DELETE'])
 def unlike_rental(id):
     """房客刪除收藏喜歡的房子"""
@@ -249,6 +254,7 @@ def unlike_rental(id):
     connection.close()
 
     return jsonify({'message': 'Rental unliked successfully!'}), 200
+
 
 @app.route('/api/comment/<int:id>', methods=['POST'])
 def add_comment(id):
@@ -270,6 +276,7 @@ def add_comment(id):
 
     return jsonify({'message': 'Comment added successfully!'}), 201
 
+
 @app.route('/api/likes', methods=['GET'])
 def view_likes():
     """房客查看收藏清單"""
@@ -277,7 +284,7 @@ def view_likes():
 
     connection = create_connection()
     cursor = connection.cursor(dictionary=True)
-    
+
     query = """
     SELECT r.R_id, r.Address, r.Price, r.Type, r.Bedroom, r.LivingRoom, r.Bathroom, r.Ping, r.RentalTerm, r.PostDate
     FROM Favorite f
@@ -286,11 +293,12 @@ def view_likes():
     """
     cursor.execute(query, (tenant_id,))
     liked_rentals = cursor.fetchall()
-    
+
     cursor.close()
     connection.close()
 
     return jsonify({'liked_rentals': liked_rentals}), 200
-    
+
+
 if __name__ == '__main__':
     app.run(debug=True)
