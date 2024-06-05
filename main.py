@@ -233,6 +233,22 @@ def like_rental(id):
 
     return jsonify({'message': 'Rental liked successfully!'}), 201
 
+@app.route('/api/like/<int:id>', methods=['DELETE'])
+def unlike_rental(id):
+    """房客刪除收藏喜歡的房子"""
+    data = request.get_json()
+    tenant_id = data.get('tenant_id')
+
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("DELETE FROM Favorite WHERE R_id = %s AND T_id = %s", (id, tenant_id))
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({'message': 'Rental unliked successfully!'}), 200
 
 @app.route('/api/comment/<int:id>', methods=['POST'])
 def add_comment(id):
