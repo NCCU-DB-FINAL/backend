@@ -1,12 +1,18 @@
-from flask import Flask, request, jsonify
-import mysql.connector
-from mysql.connector import Error
-from datetime import datetime
 import hashlib
+from datetime import datetime, timedelta
+
+import mysql.connector
+from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from mysql.connector import Error
 
 app = Flask(__name__)
 CORS(app)
+
+app.config['JWT_SECRET_KEY'] = 'NCCUSQL'
+# app.config['JWT_SECRET_KEY'] = secrets.token_hex(32) 隨機密鑰
+jwt = JWTManager(app)
 
 
 def create_connection():
@@ -99,14 +105,22 @@ def login():
     connection.close()
 
     if user_data and user_data[1] == hashed_password:
-        return jsonify({'user_id': user_data[0]}), 200
+        # JWT
+        access_token = create_access_token(identity={'user_id': user_data[0], 'user_type': user_type},
+                                           expires_delta=timedelta(days=1))
+        return jsonify({'access_token': access_token}), 200
     else:
         return jsonify({'message': 'Invalid username or password'}), 401
 
 
 @app.route('/api/rental/<int:id>', methods=['PUT'])
+@jwt_required()
 def update_rental(id):
     """房東修改租屋資訊"""
+    current_user = get_jwt_identity()
+    if current_user['user_type'] != 'landlord':
+        return jsonify({'message': 'Unauthorized'}), 403
+
     data = request.get_json()
     address = data.get('address')
     price = data.get('price')
@@ -120,8 +134,8 @@ def update_rental(id):
     connection = create_connection()
     cursor = connection.cursor()
     cursor.execute(
-        "UPDATE Rental SET Address=%s, Price=%s, Type=%s, Bedroom=%s, LivingRoom=%s, Bathroom=%s, Ping=%s, RentalTerm=%s WHERE R_id=%s",
-        (address, price, type, bedroom, living_room, bathroom, ping, rental_term, id))
+        "UPDATE Rental SET Address=%s, Price=%s, Type=%s, Bedroom=%s, LivingRoom=%s, Bathroom=%s, Ping=%s, RentalTerm=%s WHERE R_id=%s AND L_id=%s",
+        (address, price, type, bedroom, living_room, bathroom, ping, rental_term, id, current_user['user_id']))
     connection.commit()
     cursor.close()
     connection.close()
@@ -130,11 +144,16 @@ def update_rental(id):
 
 
 @app.route('/api/rental/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_rental(id):
     """房東刪除租屋資訊"""
+    current_user = get_jwt_identity()
+    if current_user['user_type'] != 'landlord':
+        return jsonify({'message': 'Unauthorized'}), 403
+
     connection = create_connection()
     cursor = connection.cursor()
-    cursor.execute("DELETE FROM Rental WHERE R_id=%s", (id,))
+    cursor.execute("DELETE FROM Rental WHERE R_id=%s AND L_id=%s", (id, current_user['user_id']))
     connection.commit()
     cursor.close()
     connection.close()
@@ -143,8 +162,13 @@ def delete_rental(id):
 
 
 @app.route('/api/rental', methods=['POST'])
+@jwt_required()
 def add_rental():
     """房東新增租屋資訊"""
+    current_user = get_jwt_identity()
+    if current_user['user_type'] != 'landlord':
+        return jsonify({'message': 'Unauthorized'}), 403
+
     data = request.get_json()
     address = data.get('address')
     price = data.get('price')
@@ -155,13 +179,12 @@ def add_rental():
     ping = data.get('ping')
     rental_term = data.get('rental_term')
     post_date = datetime.now().strftime('%Y-%m-%d')
-    landLord_id = data.get('landLord_id')
 
     connection = create_connection()
     cursor = connection.cursor()
     cursor.execute(
         "INSERT INTO Rental (Address, Price, Type, Bedroom, LivingRoom, Bathroom, Ping, RentalTerm, PostDate, L_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-        (address, price, type, bedroom, living_room, bathroom, ping, rental_term, post_date, landLord_id))
+        (address, price, type, bedroom, living_room, bathroom, ping, rental_term, post_date, current_user['user_id']))
     connection.commit()
     cursor.close()
     connection.close()
@@ -170,14 +193,17 @@ def add_rental():
 
 
 @app.route('/api/rental', methods=['GET'])
+@jwt_required()
 def get_user_rentals():
     """房東查看自己貼的所有租屋資訊"""
-    user_id = request.args.get('user')
+    current_user = get_jwt_identity()
+    if current_user['user_type'] != 'landlord':
+        return jsonify({'message': 'Unauthorized'}), 403
 
     connection = create_connection()
     cursor = connection.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM Rental WHERE L_id = %s", (user_id,))
+    cursor.execute("SELECT * FROM Rental WHERE L_id = %s", (current_user['user_id'],))
     rentals = cursor.fetchall()
 
     cursor.close()
@@ -240,11 +266,14 @@ def get_rental(id):
 
 
 @app.route('/api/like/<int:id>', methods=['POST'])
+@jwt_required()
 def like_rental(id):
     """房客收藏喜歡的房子"""
-    data = request.get_json()
-    tenant_id = data.get('tenant_id')
+    current_user = get_jwt_identity()
+    if current_user['user_type'] != 'tenant':
+        return jsonify({'message': 'Unauthorized'}), 403
 
+    tenant_id = current_user['user_id']
     connection = create_connection()
     cursor = connection.cursor()
 
@@ -258,11 +287,14 @@ def like_rental(id):
 
 
 @app.route('/api/like/<int:id>', methods=['DELETE'])
+@jwt_required()
 def unlike_rental(id):
     """房客刪除收藏喜歡的房子"""
-    data = request.get_json()
-    tenant_id = data.get('tenant_id')
+    current_user = get_jwt_identity()
+    if current_user['user_type'] != 'tenant':
+        return jsonify({'message': 'Unauthorized'}), 403
 
+    tenant_id = current_user['user_id']
     connection = create_connection()
     cursor = connection.cursor()
 
@@ -276,10 +308,15 @@ def unlike_rental(id):
 
 
 @app.route('/api/comment/<int:id>', methods=['POST'])
+@jwt_required()
 def add_comment(id):
     """房客對租屋資訊留下評論"""
+    current_user = get_jwt_identity()
+    if current_user['user_type'] != 'tenant':
+        return jsonify({'message': 'Unauthorized'}), 403
+
+    tenant_id = current_user['user_id']
     data = request.get_json()
-    tenant_id = data.get('tenant_id')  # 假設前端將房客ID傳遞過來
     rating = data.get('rating')
     comment = data.get('comment')
 
@@ -297,10 +334,14 @@ def add_comment(id):
 
 
 @app.route('/api/likes', methods=['GET'])
+@jwt_required()
 def view_likes():
     """房客查看收藏清單"""
-    tenant_id = request.args.get('tenant_id')
+    current_user = get_jwt_identity()
+    if current_user['user_type'] != 'tenant':
+        return jsonify({'message': 'Unauthorized'}), 403
 
+    tenant_id = current_user['user_id']
     connection = create_connection()
     cursor = connection.cursor(dictionary=True)
 
