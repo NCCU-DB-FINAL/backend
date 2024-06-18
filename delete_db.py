@@ -10,9 +10,9 @@ def create_connection():
     connection = None
     try:
         connection = mysql.connector.connect(
-            host='mysql-nccu.mysql.database.azure.com',
-            user='nccu',
-            password='123!@#qaz',
+            host='mysql.h9bxbshbg9f4bjb9.japaneast.azurecontainer.io',
+            user='root',
+            password='nccunccunccu',
         )
         if connection.is_connected():
             print("Connection to MySQL DB successful")
