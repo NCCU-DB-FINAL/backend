@@ -255,7 +255,7 @@ def get_rental(id):
     connection = create_connection()
     cursor = connection.cursor()
     cursor.execute(
-        "SELECT * FROM Rental WHERE R_id=%s", (id))
+        "SELECT * FROM Rental WHERE R_id=%s", (id,))
     rental = cursor.fetchone()
     cursor.close()
     connection.close()
