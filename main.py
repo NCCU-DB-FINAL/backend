@@ -214,7 +214,7 @@ def get_user_rentals():
 
 @app.route('/api/rental/search', methods=['GET'])
 def search_rental():
-    """房客搜尋租屋資訊"""
+    """搜尋租屋資訊"""
     search_criteria = request.get_json()
 
     area = search_criteria.get('area')
@@ -297,19 +297,21 @@ def get_rental(id):
     return jsonify(response), 200
 
 
-@app.route('/api/like/<int:id>', methods=['POST'])
+@app.route('/api/like', methods=['POST'])
 @jwt_required()
-def like_rental(id):
+def like_rental():
     """房客收藏喜歡的房子"""
     current_user = get_jwt_identity()
     if current_user['user_type'] != 'tenant':
         return jsonify({'message': 'Unauthorized'}), 403
+    data = request.get_json()
+    rental_id = data.get('rental_id')
 
     tenant_id = current_user['user_id']
     connection = create_connection()
     cursor = connection.cursor()
 
-    cursor.execute("INSERT INTO Favorite (R_id, T_id) VALUES (%s, %s)", (id, tenant_id))
+    cursor.execute("INSERT INTO Favorite (R_id, T_id) VALUES (%s, %s)", (rental_id, tenant_id,))
 
     connection.commit()
     cursor.close()
@@ -318,19 +320,21 @@ def like_rental(id):
     return jsonify({'message': 'Rental liked successfully!'}), 201
 
 
-@app.route('/api/like/<int:id>', methods=['DELETE'])
+@app.route('/api/like', methods=['DELETE'])
 @jwt_required()
-def unlike_rental(id):
-    """房客刪除收藏喜歡的房子"""
+def unlike_rental():
+    """房客取消收藏喜歡的房子"""
     current_user = get_jwt_identity()
     if current_user['user_type'] != 'tenant':
         return jsonify({'message': 'Unauthorized'}), 403
+    data = request.get_json()
+    rental_id = data.get('rental_id')
 
     tenant_id = current_user['user_id']
     connection = create_connection()
     cursor = connection.cursor()
 
-    cursor.execute("DELETE FROM Favorite WHERE R_id = %s AND T_id = %s", (id, tenant_id))
+    cursor.execute("DELETE FROM Favorite WHERE R_id = %s AND T_id = %s", (rental_id, tenant_id))
 
     connection.commit()
     cursor.close()
@@ -365,7 +369,7 @@ def add_comment(id):
     return jsonify({'message': 'Comment added successfully!'}), 201
 
 
-@app.route('/api/likes', methods=['GET'])
+@app.route('/api/like', methods=['GET'])
 @jwt_required()
 def view_likes():
     """房客查看收藏清單"""
@@ -378,7 +382,7 @@ def view_likes():
     cursor = connection.cursor(dictionary=True)
 
     query = """
-    SELECT r.R_id, r.Address, r.Price, r.Type, r.Bedroom, r.LivingRoom, r.Bathroom, r.Ping, r.RentalTerm, r.PostDate
+    SELECT r.R_id, r.Address, r.Price, r.Type, r.Bedroom, r.LivingRoom, r.Bathroom, r.Ping, r.RentalTerm, r.PostDate, r.L_id
     FROM Favorite f
     JOIN Rental r ON f.R_id = r.R_id
     WHERE f.T_id = %s
@@ -389,7 +393,11 @@ def view_likes():
     cursor.close()
     connection.close()
 
-    return jsonify({'liked_rentals': liked_rentals}), 200
+    response = {
+        "likes": liked_rentals
+    }
+
+    return jsonify(response), 200
 
 
 if __name__ == '__main__':
