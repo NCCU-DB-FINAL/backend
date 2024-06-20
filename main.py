@@ -253,16 +253,48 @@ def search_rental():
 def get_rental(id):
     """房客瀏覽單獨物件資訊"""
     connection = create_connection()
-    cursor = connection.cursor()
+    cursor = connection.cursor(dictionary=True)
+    
+    # 查詢租屋資訊
     cursor.execute(
-        "SELECT * FROM Rental WHERE R_id=%s", (id,))
+        "SELECT Rental.*, LandLord.L_Name, LandLord.L_PhoneNum FROM Rental LEFT JOIN LandLord ON Rental.L_id = LandLord.L_id WHERE R_id=%s", 
+        (id,)
+    )
     rental = cursor.fetchone()
+    
+    if not rental:
+        cursor.close()
+        connection.close()
+        return jsonify({'message': 'Rental not found!'}), 404
+    
+    # 查詢評論
+    cursor.execute(
+        "SELECT Timestamp, Rating, Comment FROM Review WHERE R_id=%s", 
+        (id,)
+    )
+    reviews = cursor.fetchall()
+    
     cursor.close()
     connection.close()
 
-    if not rental:
-        return jsonify({'message': 'Rental not found!'}), 404
-    return jsonify({'rental': rental}), 200
+    # 構建返回結果
+    response = {
+        "R_id": rental["R_id"],
+        "Address": rental["Address"],
+        "Price": rental["Price"],
+        "Type": rental["Type"],
+        "Bedroom": rental["Bedroom"],
+        "LivingRoom": rental["LivingRoom"],
+        "Bathroom": rental["Bathroom"],
+        "Ping": rental["Ping"],
+        "RentalTerm": rental["RentalTerm"],
+        "PostDate": rental["PostDate"],
+        "L_Name": rental["L_Name"],
+        "L_PhoneNum": rental["L_PhoneNum"],
+        "Reviews": reviews
+    }
+    
+    return jsonify(response), 200
 
 
 @app.route('/api/like/<int:id>', methods=['POST'])
