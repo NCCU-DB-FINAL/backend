@@ -282,6 +282,7 @@ def get_rental(id):
     response = {
         "R_id": rental["R_id"],
         "Address": rental["Address"],
+        "title": rental["title"],
         "Price": rental["Price"],
         "Type": rental["Type"],
         "Bedroom": rental["Bedroom"],
