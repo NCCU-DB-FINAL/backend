@@ -214,14 +214,13 @@ def get_user_rentals():
 
 @app.route('/api/rental/search', methods=['GET'])
 def search_rental():
-    """搜尋租屋資訊"""
-    search_criteria = request.get_json()
-
+    """房客搜尋租屋資訊"""
+    search_criteria = request.args
     area = search_criteria.get('area')
-    min_price = search_criteria.get('min_price')
-    max_price = search_criteria.get('max_price')
-    min_ping = search_criteria.get('min_ping')
-    max_ping = search_criteria.get('max_ping')
+    min_price = search_criteria.get('min_price', type=int)
+    max_price = search_criteria.get('max_price', type=int)
+    min_ping = search_criteria.get('min_ping', type=int)
+    max_ping = search_criteria.get('max_ping', type=int)
     sort_by = search_criteria.get('sort_by')
 
     connection = create_connection()

@@ -60,8 +60,8 @@ class TestRentalAPI(unittest.TestCase):
     def test3_search_rental(self):
         url = f'{self.base_url}/api/rental/search'
         search_criteria = {'area': 'Main St'}
-        response = requests.get(url, json=search_criteria)
-        print(response.request.body)
+        response = requests.get(url, params=search_criteria)
+        print(response.request.url)
         print(response.content)
         self.assertEqual(response.status_code, 200)
 
