@@ -123,6 +123,7 @@ def update_rental(id):
 
     data = request.get_json()
     address = data.get('address')
+    title = data.get('title')
     price = data.get('price')
     type = data.get('type')
     bedroom = data.get('bedroom')
@@ -134,8 +135,8 @@ def update_rental(id):
     connection = create_connection()
     cursor = connection.cursor()
     cursor.execute(
-        "UPDATE Rental SET Address=%s, Price=%s, Type=%s, Bedroom=%s, LivingRoom=%s, Bathroom=%s, Ping=%s, RentalTerm=%s WHERE R_id=%s AND L_id=%s",
-        (address, price, type, bedroom, living_room, bathroom, ping, rental_term, id, current_user['user_id']))
+        "UPDATE Rental SET Address=%s, Title=%s, Price=%s, Type=%s, Bedroom=%s, LivingRoom=%s, Bathroom=%s, Ping=%s, RentalTerm=%s WHERE R_id=%s AND L_id=%s",
+        (address, title, price, type, bedroom, living_room, bathroom, ping, rental_term, id, current_user['user_id']))
     connection.commit()
     cursor.close()
     connection.close()
@@ -171,6 +172,7 @@ def add_rental():
 
     data = request.get_json()
     address = data.get('address')
+    title = data.get('title')
     price = data.get('price')
     type = data.get('type')
     bedroom = data.get('bedroom')
@@ -183,8 +185,8 @@ def add_rental():
     connection = create_connection()
     cursor = connection.cursor()
     cursor.execute(
-        "INSERT INTO Rental (Address, Price, Type, Bedroom, LivingRoom, Bathroom, Ping, RentalTerm, PostDate, L_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-        (address, price, type, bedroom, living_room, bathroom, ping, rental_term, post_date, current_user['user_id']))
+        "INSERT INTO Rental (Address, Title, Price, Type, Bedroom, LivingRoom, Bathroom, Ping, RentalTerm, PostDate, L_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+        (address, title, price, type, bedroom, living_room, bathroom, ping, rental_term, post_date, current_user['user_id']))
     connection.commit()
     cursor.close()
     connection.close()
@@ -368,7 +370,7 @@ def add_comment(id):
     return jsonify({'message': 'Comment added successfully!'}), 201
 
 
-@app.route('/api/like', methods=['GET'])
+@app.route('/api/likes', methods=['GET'])
 @jwt_required()
 def view_likes():
     """房客查看收藏清單"""
@@ -381,7 +383,7 @@ def view_likes():
     cursor = connection.cursor(dictionary=True)
 
     query = """
-    SELECT r.R_id, r.Address, r.Price, r.Type, r.Bedroom, r.LivingRoom, r.Bathroom, r.Ping, r.RentalTerm, r.PostDate, r.L_id
+    SELECT r.R_id, r.Address, r.Title, r.Price, r.Type, r.Bedroom, r.LivingRoom, r.Bathroom, r.Ping, r.RentalTerm, r.PostDate
     FROM Favorite f
     JOIN Rental r ON f.R_id = r.R_id
     WHERE f.T_id = %s
@@ -392,11 +394,7 @@ def view_likes():
     cursor.close()
     connection.close()
 
-    response = {
-        "likes": liked_rentals
-    }
-
-    return jsonify(response), 200
+    return jsonify({'liked_rentals': liked_rentals}), 200
 
 
 if __name__ == '__main__':
