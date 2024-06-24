@@ -1,18 +1,21 @@
-import mysql.connector
-from mysql.connector import Error
-
-
 '''
 不要亂run，不然可能會被討厭
 '''
+import mysql.connector
+from mysql.connector import Error
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
 def create_connection():
-    """建立與MySQL資料庫的連接"""
+    """建立連接"""
     connection = None
     try:
         connection = mysql.connector.connect(
-            host='mysql.h9bxbshbg9f4bjb9.japaneast.azurecontainer.io',
-            user='root',
-            password='nccunccunccu',
+            host=os.getenv('DB_HOST'),
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD')
         )
         if connection.is_connected():
             print("Connection to MySQL DB successful")
