@@ -6,6 +6,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from mysql.connector import Error
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -20,10 +24,10 @@ def create_connection():
     connection = None
     try:
         connection = mysql.connector.connect(
-            host='mysql.h9bxbshbg9f4bjb9.japaneast.azurecontainer.io',
-            user='root',
-            password='nccunccunccu',
-            database='rental_db'
+            host=os.getenv('DB_HOST'),
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD'),
+            database=os.getenv('DB_NAME')
         )
         if connection.is_connected():
             print("Connection to MySQL DB successful")
