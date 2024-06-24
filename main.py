@@ -313,17 +313,25 @@ def like_rental():
     connection = create_connection()
     cursor = connection.cursor()
 
-    # 檢查是否已經收藏過
-    cursor.execute("SELECT * FROM Favorite WHERE R_id = %s AND T_id = %s", (rental_id, tenant_id))
-    existing_favorite = cursor.fetchone()
+    try:
+        # 檢查是否已經收藏過
+        cursor.execute("SELECT * FROM Favorite WHERE R_id = %s AND T_id = %s", (rental_id, tenant_id))
+        existing_favorite = cursor.fetchone()
 
-    if existing_favorite:
+        if existing_favorite:
+            cursor.close()
+            connection.close()
+            return jsonify({'message': 'Rental already liked'}), 409
+
+        # 插入新的收藏紀錄
+        cursor.execute("INSERT INTO Favorite (R_id, T_id) VALUES (%s, %s)", (rental_id, tenant_id))
+        connection.commit()
+    except Error as e:
+        connection.rollback()
         cursor.close()
         connection.close()
-        return jsonify({'message': 'Rental already liked'}), 409
+        return jsonify({'message': f'Error: {str(e)}'}), 500
 
-    cursor.execute("INSERT INTO Favorite (R_id, T_id) VALUES (%s, %s)", (rental_id, tenant_id))
-    connection.commit()
     cursor.close()
     connection.close()
 
