@@ -6,16 +6,20 @@ import requests
 from mysql.connector import connect, Error
 from datetime import datetime
 
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 def create_connection():
     """建立連接"""
     connection = None
     try:
-        connection = connect(
-            host='mysql.h9bxbshbg9f4bjb9.japaneast.azurecontainer.io',
-            user='root',
-            password='nccunccunccu',
-            database='rental_db'
+        connection = mysql.connector.connect(
+            host=os.getenv('DB_HOST'),
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD'),
+            database=os.getenv('DB_NAME')
         )
         if connection.is_connected():
             print("Connection to MySQL DB successful")
