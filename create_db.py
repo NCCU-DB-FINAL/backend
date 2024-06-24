@@ -57,7 +57,7 @@ def create_tables(connection):
         CREATE TABLE Rental (
             R_id INT AUTO_INCREMENT PRIMARY KEY,
             Address VARCHAR(255) NOT NULL,
-            Price DECIMAL(10, 2) NOT NULL,
+            Price DECIMAL(10, 0) NOT NULL,
             Type VARCHAR(50) NOT NULL,
             Bedroom INT NOT NULL,
             LivingRoom INT NOT NULL,
